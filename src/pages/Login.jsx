@@ -2,7 +2,10 @@ import { Lock, Mail, User2Icon } from "lucide-react";
 import React from "react";
 
 const Login = () => {
-  const [state, setState] = React.useState("login");
+  const query = new URLSearchParams(window.location.search);
+  const urlState = query.get("state");
+
+  const [state, setState] = React.useState(urlState || "login");
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -30,7 +33,7 @@ const Login = () => {
         <p className="text-gray-500 text-sm mt-2">Please sign in to continue</p>
         {state !== "login" && (
           <div className="flex items-center mt-6 w-full bg-white border border-gray-300/80 h-12 rounded-full overflow-hidden pl-6 gap-2">
-        <User2Icon size={16} color="#6b7280" />
+            <User2Icon size={16} color="#6b7280" />
             <input
               type="text"
               name="name"
@@ -43,7 +46,7 @@ const Login = () => {
           </div>
         )}
         <div className="flex items-center w-full mt-4 bg-white border border-gray-300/80 h-12 rounded-full overflow-hidden pl-6 gap-2">
-        <Mail size={13} color="#6b7280" />
+          <Mail size={13} color="#6b7280" />
           <input
             type="email"
             name="email"
@@ -55,7 +58,7 @@ const Login = () => {
           />
         </div>
         <div className="flex items-center mt-4 w-full bg-white border border-gray-300/80 h-12 rounded-full overflow-hidden pl-6 gap-2">
-          <Lock size={13} color="#6b7280"/>
+          <Lock size={13} color="#6b7280" />
           <input
             type="password"
             name="password"
@@ -66,14 +69,14 @@ const Login = () => {
             required
           />
         </div>
-        <div className="mt-4 text-left text-indigo-500">
+        <div className="mt-4 text-left text-green-500">
           <button className="text-sm" type="reset">
             Forget password?
           </button>
         </div>
         <button
           type="submit"
-          className="mt-2 w-full h-11 rounded-full text-white bg-indigo-500 hover:opacity-90 transition-opacity"
+          className="mt-2 w-full h-11 rounded-full text-white bg-green-500 hover:opacity-90 transition-opacity"
         >
           {state === "login" ? "Login" : "Sign up"}
         </button>
@@ -86,7 +89,7 @@ const Login = () => {
           {state === "login"
             ? "Don't have an account?"
             : "Already have an account?"}{" "}
-          <a href="#" className="text-indigo-500 hover:underline">
+          <a href="#" className="text-green-500 hover:underline">
             click here
           </a>
         </p>
