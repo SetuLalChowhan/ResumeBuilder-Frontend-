@@ -127,9 +127,14 @@ const PersonalInfoForm = ({
               {field.label}
               {field.required && <span className="text-red-600">*</span>}
             </label>
-            <input type={field.type} value={data[field.key || ""]} 
-            onChange={(e)=>handleChange(field.key, e.target.value)}
-            className="ml-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500 focus:border outline-none transition-colors text-sm" placeholder={`Enter your ${field.label.toLocaleLowerCase()}`} required={field.required}/>
+            <input
+              type={field.type}
+              value={data[field.key || ""]}
+              onChange={(e) => handleChange(field.key, e.target.value)}
+              className="ml-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500 focus:border outline-none transition-colors text-sm"
+              placeholder={`Enter your ${field.label.toLocaleLowerCase()}`}
+              required={field.required}
+            />
           </div>
         );
       })}
