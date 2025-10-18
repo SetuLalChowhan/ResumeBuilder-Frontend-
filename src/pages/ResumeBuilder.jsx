@@ -25,9 +25,15 @@ import ExperienceForm from "../components/ExperienceForm";
 import EducationForm from "../components/EducationForm";
 import ProjectForm from "../components/ProjectForm";
 import SkillsForm from "../components/SkillsForm";
+import { useSelector } from "react-redux";
+import api from "../configs/api";
+import toast from "react-hot-toast";
 
 const ResumeBuilder = () => {
   const { resumeId } = useParams();
+
+  const { token } = useSelector((state) => state.auth);
+
   const [resumeData, setResumeData] = useState({
     _id: "",
     title: "",
@@ -46,10 +52,17 @@ const ResumeBuilder = () => {
   const [removeBackground, setRemoveBackground] = useState(false);
 
   const loadExistingResume = async () => {
-    const resume = dummyResumeData.find((r) => r._id === resumeId);
-    if (resume) {
-      setResumeData(resume);
-      document.title = resume.title;
+    try {
+      const { data } = await api.get(`/resumes/get/${resumeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.resume) {
+        setResumeData(data.resume);
+        document.title = data.resume.title;
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+      console.log(err);
     }
   };
 
@@ -76,11 +89,23 @@ const ResumeBuilder = () => {
     }));
   };
 
-  const changeResumeVisibility = () => {
-    setResumeData({
-      ...resumeData,
-      public: !resumeData.public,
-    });
+  const changeResumeVisibility = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("resumeId", resumeId);
+      formData.append("resumeData", JSON.stringify({ public: !resumeData.public }));
+      const { data } = await api.put(`/resumes/update`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.resume) {
+        setResumeData({ ...resumeData, public: !resumeData.public });
+        document.title = data.resume.title;
+      }
+      toast.success(data.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+      console.log(err);
+    }
   };
 
   const handleShare = () => {
@@ -96,10 +121,39 @@ const ResumeBuilder = () => {
     }
   };
 
-const downloadResume = () => {
-  // Remove the setTimeout and print directly
-  window.print();
-};
+  const downloadResume = () => {
+    // Remove the setTimeout and print directly
+    window.print();
+  };
+
+  const saveResume = async () => {
+    try {
+      let updatedResumeData = structuredClone(resumeData);
+      console.log(updatedResumeData);
+
+      if (typeof resumeData.personal_info.image === "object") {
+        delete updatedResumeData.personal_info.image;
+      }
+
+      const formData = new FormData();
+      formData.append("resumeId", resumeId);
+      formData.append("resumeData", JSON.stringify(updatedResumeData));
+      removeBackground && formData.append("removeBackground", "yes");
+      typeof resumeData.personal_info.image === "object" &&
+        formData.append("image", resumeData.personal_info.image);
+      const { data } = await api.put(`/resumes/update`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.resume) {
+        setResumeData(data.resume);
+        document.title = data.resume.title;
+      }
+      toast.success(data.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+      console.log(err);
+    }
+  };
 
   return (
     <div>
@@ -225,7 +279,14 @@ const downloadResume = () => {
                   />
                 )}
               </div>
-              <button className=" bg-gradient-to-br from-green-100 to-green-200 ring-gray-300 text-green-600 ring hover:ring-gray-400 transition-all rounded-md px-6 py-2 mt-6 text-sm">
+              <button
+                onClick={() => {
+                  toast.promise(saveResume, {
+                    loading: "Saving",
+                  });
+                }}
+                className=" bg-gradient-to-br from-green-100 to-green-200 ring-gray-300 text-green-600 ring hover:ring-gray-400 transition-all rounded-md px-6 py-2 mt-6 text-sm"
+              >
                 Save Changes
               </button>
             </div>
@@ -236,12 +297,18 @@ const downloadResume = () => {
             <div className="relative w-full">
               <div className="absolute bottom-3 left-0 right-0 flex items-center justify-end gap-2">
                 {resumeData.public && (
-                  <button onClick={handleShare} className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 rounded-lg ring-blue-300 hover:ring transition-colors">
+                  <button
+                    onClick={handleShare}
+                    className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 rounded-lg ring-blue-300 hover:ring transition-colors"
+                  >
                     <Share2Icon className="size-4" /> Share
                   </button>
                 )}
 
-                <button onClick={changeResumeVisibility} className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors">
+                <button
+                  onClick={changeResumeVisibility}
+                  className="flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors"
+                >
                   {resumeData.public ? (
                     <EyeIcon className="size-4" />
                   ) : (
@@ -250,10 +317,13 @@ const downloadResume = () => {
 
                   {resumeData.public ? "Private" : "Public"}
                 </button>
-                <button onClick={(e) => {
-    e.preventDefault();
-    downloadResume();
-  }} className="flex items-center gap-2 px-6 py-2 text-xs bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 ring-rose-300 rounded-lg hover:ring transition-colors">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    downloadResume();
+                  }}
+                  className="flex items-center gap-2 px-6 py-2 text-xs bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 ring-rose-300 rounded-lg hover:ring transition-colors"
+                >
                   <DownloadIcon className=" size-4" /> Download
                 </button>
               </div>
