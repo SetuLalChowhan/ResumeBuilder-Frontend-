@@ -93,14 +93,17 @@ const ResumeBuilder = () => {
     try {
       const formData = new FormData();
       formData.append("resumeId", resumeId);
-      formData.append("resumeData", JSON.stringify({ public: !resumeData.public }));
+      formData.append(
+        "resumeData",
+        JSON.stringify({ public: !resumeData.public })
+      );
       const { data } = await api.put(`/resumes/update`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (data.resume) {
+      
         setResumeData({ ...resumeData, public: !resumeData.public });
-        document.title = data.resume.title;
-      }
+
+     
       toast.success(data.message);
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);
@@ -154,6 +157,8 @@ const ResumeBuilder = () => {
       console.log(err);
     }
   };
+
+  console.log(resumeData)
 
   return (
     <div>

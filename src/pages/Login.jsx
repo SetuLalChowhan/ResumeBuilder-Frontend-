@@ -4,10 +4,12 @@ import api from "../configs/api";
 import { useDispatch } from "react-redux";
 import { login } from "../app/features/authSlice";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
   const urlState = query.get("state");
+  const navigate = useNavigate();
 
   const [state, setState] = React.useState(urlState || "login");
   const dispatch = useDispatch();
@@ -25,6 +27,7 @@ const Login = () => {
       dispatch(login(data));
       localStorage.setItem("token", data.token);
       toast.success(data.message);
+      navigate("/app");
     } catch (err) {
       toast.error(err.response.data.message || err.message);
       console.log(err);
@@ -83,11 +86,7 @@ const Login = () => {
             required
           />
         </div>
-        <div className="mt-4 text-left text-green-500">
-          <button className="text-sm" type="reset">
-            Forget password?
-          </button>
-        </div>
+        
         <button
           type="submit"
           className="mt-2 w-full h-11 rounded-full text-white bg-green-500 hover:opacity-90 transition-opacity"

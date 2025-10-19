@@ -1,5 +1,8 @@
 import { Plus, Sparkles, Trash2 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import api from "../configs/api";
+import { useSelector } from "react-redux";
 
 const ProjectForm = ({ data, onChange }) => {
   const addProject = () => {
@@ -12,6 +15,10 @@ const ProjectForm = ({ data, onChange }) => {
     onChange([...data, newProject]);
   };
 
+  const [generatingIndex, setGeneratingIndex] = useState(-1);
+
+  const {token} =useSelector((state) => state.auth);
+
   const removeProject = (index) => {
     const updated = data.filter((_, i) => i !== index);
     onChange(updated);
@@ -20,6 +27,26 @@ const ProjectForm = ({ data, onChange }) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
+  };
+
+  const generateDescription = async (index) => {
+    setGeneratingIndex(index);
+    const project = data[index];
+    const prompt = `Enhance this project description ${project.description}  for the project of ${project.name} of type ${project.type}`;
+
+    try {
+      const { data } = await api.post(
+        `/ai/enhance-project-desc`,
+        { userContent: prompt },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      updateProject(index, "description", data.enhancedProjectDescription);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setGeneratingIndex(-1);
+    }
   };
   return (
     <div className=" ">
@@ -57,34 +84,32 @@ const ProjectForm = ({ data, onChange }) => {
             <div className="grid md:grid-cols-2 gap-3">
               <input
                 value={project.name || ""}
-                onChange={(e) =>
-                  updateProject(index, "name", e.target.value)
-                }
+                onChange={(e) => updateProject(index, "name", e.target.value)}
                 type="text"
                 placeholder="Project Name"
                 className=" px-3 py-2 text-sm rounded-lg"
               />
               <input
                 value={project.type || ""}
-                onChange={(e) =>
-                  updateProject(index, "type", e.target.value)
-                }
+                onChange={(e) => updateProject(index, "type", e.target.value)}
                 type="text"
                 placeholder="Project Type"
                 className=" px-3 py-2 text-sm rounded-lg"
               />
-
             </div>
-
 
             <div className=" space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700" htmlFor="">
                   Project Description
                 </label>
-                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50">
+                <button disabled={generatingIndex === index || !project.description || !project.type || !project.name} onClick={() => generateDescription(index)}  className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50">
                   <Sparkles className="w-3 h-3" />
-                  Enhance with AI
+                  {
+                    generatingIndex === index
+                      ? "Generating..."
+                      : "Enhance Description"
+                  }
                 </button>
               </div>
               <textarea

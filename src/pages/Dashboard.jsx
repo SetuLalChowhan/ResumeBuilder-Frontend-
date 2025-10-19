@@ -34,7 +34,7 @@ const Dashboard = () => {
       setAllResumes(data.resumes);
       setIsLoading(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message);
+
       console.log(err);
     }
   };

@@ -1,7 +1,12 @@
 import { Briefcase, Plus, Sparkle, Sparkles, Trash2 } from "lucide-react";
-import React from "react";
+import React, { use, useState } from "react";
+import { useSelector } from "react-redux";
+import api from "../configs/api";
+import toast from "react-hot-toast";
 
 const ExperienceForm = ({ data, onChange }) => {
+  const { token } = useSelector((state) => state.auth);
+  const [generatingIndex, setGeneratingIndex] = useState(-1);
   const addExpeirence = () => {
     const newExperience = {
       company: "",
@@ -22,6 +27,26 @@ const ExperienceForm = ({ data, onChange }) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
+  };
+
+  const generateDescription = async (index) => {
+    setGeneratingIndex(index);
+    const experience = data[index];
+    const prompt = `Enhance this job description ${experience.description} for the position of ${experience.position} at ${experience.company}`;
+
+    try {
+      const { data } = await api.post(
+        `/ai/enhance-job-desc`,
+        { userContent: prompt },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      updateExperience(index, "description", data.enhancedContent);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setGeneratingIndex(-1);
+    }
   };
   return (
     <div className=" space-y-6">
@@ -125,13 +150,25 @@ const ExperienceForm = ({ data, onChange }) => {
                   >
                     Job Description
                   </label>
-                  <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50">
+                  <button disabled={generatingIndex === index || !experience.description || !experience.position || !experience.company}
+                    onClick={() => generateDescription(index)} className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50">
                     <Sparkles className="w-3 h-3" />
-                    Enhance with AI
+                    {
+                      generatingIndex === index ? "Generating..." : "Enhance with ai"
+                    }
                   </button>
                 </div>
-                <textarea value={experience.description || ""} rows={4} 
-                onChange={(e) => updateExperience(index, "description", e.target.value)} name="" id="" className="w-full text-sm px-3 py-2 rounded-lg resize-none" placeholder="Describe your key responsibilities and achivements..." />
+                <textarea
+                  value={experience.description || ""}
+                  rows={4}
+                  onChange={(e) =>
+                    updateExperience(index, "description", e.target.value)
+                  }
+                  name=""
+                  id=""
+                  className="w-full text-sm px-3 py-2 rounded-lg resize-none"
+                  placeholder="Describe your key responsibilities and achivements..."
+                />
               </div>
             </div>
           ))}
